@@ -1,0 +1,14 @@
+# Compile outputs
+*.o
+*.obj
+*.exe
+*.out
+
+# Runtime databases
+tnvr_records.txt
+
+# System & IDE files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

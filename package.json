@@ -1,0 +1,12 @@
+{
+  "name": "tnvr-management-system",
+  "version": "1.0.0",
+  "description": "Node.js wrapper and web dashboard interfacing with C++ OOP logistics pipeline",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

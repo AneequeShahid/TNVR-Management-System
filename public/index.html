@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TNVR Management System — OOP Logistics Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #090a0f;
+      --bg-card: rgba(18, 20, 32, 0.6);
+      --bg-card-hover: rgba(26, 28, 44, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.35);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      --accent-rose: #f43f5e;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      padding-bottom: 4rem;
+      position: relative;
+    }
+
+    /* Ambient glow elements */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.12);
+      filter: blur(160px);
+      top: -10%;
+      right: -10%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: rgba(244, 63, 94, 0.06);
+      filter: blur(140px);
+      bottom: 10%;
+      left: -10%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-title);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    /* Navbar / Header */
+    header {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background-color: rgba(9, 10, 15, 0.75);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Engine Status */
+    .status-panel {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
+    }
+
+    .status-dot.simulated {
+      background: var(--accent-amber);
+      box-shadow: 0 0 10px var(--accent-amber);
+    }
+
+    /* Layout Containers */
+    .main-container {
+      max-width: 1300px;
+      margin: 2.5rem auto 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 1.5rem;
+      right: 1.5rem;
+      height: 2px;
+      background: var(--primary-gradient);
+      opacity: 0.3;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-family: var(--font-title);
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Dashboard Action Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* Cards */
+    .dashboard-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    .card-title-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    /* Tabs for Form */
+    .form-tabs {
+      display: flex;
+      background: #141523;
+      padding: 0.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.5rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .form-tab-btn.active {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #10111e;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      transition: var(--transition-smooth);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .checkbox-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .checkbox-label input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .form-btn {
+      width: 100%;
+      background: var(--primary-gradient);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+      transition: var(--transition-smooth);
+    }
+
+    .form-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Registry Animal List Grid */
+    .registry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .registry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      min-height: 200px;
+    }
+
+    .animal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .animal-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .animal-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .animal-tag {
+      font-family: var(--font-title);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .species-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary-hover);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .species-badge.dog {
+      background: rgba(244, 63, 94, 0.1);
+      color: #f43f5e;
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+
+    .species-badge.cat {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .animal-detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .animal-detail-value {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .health-badge {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .status-badges-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .status-flag {
+      flex: 1;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .status-flag.active {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .status-flag.inactive {
+      background: rgba(244, 63, 94, 0.1);
+      color: #f87171;
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.85rem;
+    }
+
+    .card-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: var(--transition-smooth);
+    }
+
+    .card-action-btn:hover {
+      color: var(--text-main);
+    }
+
+    .card-action-btn.delete:hover {
+      color: var(--accent-rose);
+    }
+
+    /* Engine Output Console Log */
+    .console-card {
+      margin-top: 2.5rem;
+      background: #08090f;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .console-header {
+      background: #11121d;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .console-title {
+      font-family: var(--font-title);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .console-body {
+      height: 180px;
+      padding: 1.25rem;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #c7d2fe;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.4rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 576px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .header-container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🐈</span>
+        <h1>TNVR LOGISTICS MANAGEMENT</h1>
+      </div>
+      <div class="status-panel">
+        <div class="status-dot" id="engineDot"></div>
+        <span id="engineModeText">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Stats Row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Registered</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-subtext">Active animal records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cats Registry</div>
+        <div class="stat-value" id="statCats">0</div>
+        <div class="stat-subtext" id="statCatsFeral">0 Feral</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dogs Registry</div>
+        <div class="stat-value" id="statDogs">0</div>
+        <div class="stat-subtext">Active street canines</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Logistic Status</div>
+        <div class="stat-value" id="statNeuteredPct">0%</div>
+        <div class="stat-subtext">Neutered ratio</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-grid">
+      <!-- Register Form -->
+      <div class="dashboard-card">
+        <div class="card-title-wrap">
+          <div class="card-title" id="formTitle">Register Tag Record</div>
+        </div>
+        
+        <!-- Form Tabs -->
+        <div class="form-tabs">
+          <button class="form-tab-btn active" id="tabDog" onclick="setSpecies('Dog')">Dog</button>
+          <button class="form-tab-btn" id="tabCat" onclick="setSpecies('Cat')">Cat</button>
+        </div>
+
+        <form id="recordForm" onsubmit="handleFormSubmit(event)">
+          <!-- Edit identifier -->
+          <input type="hidden" id="editOriginalTag">
+
+          <div class="form-group">
+            <label for="tagNumber">Tag Number (Unique Identifier)</label>
+            <input type="text" id="tagNumber" class="form-control" placeholder="e.g. DG-101" required>
+          </div>
+
+          <div class="form-group">
+            <label for="age">Estimated Age (Months)</label>
+            <input type="number" id="age" class="form-control" min="1" max="180" placeholder="e.g. 24" required>
+          </div>
+
+          <div class="form-group">
+            <label for="healthStatus">Health Status</label>
+            <input type="text" id="healthStatus" class="form-control" placeholder="e.g. Healthy, Injured-Recovering" required>
+          </div>
+
+          <div class="form-group">
+            <label>Medical Pipeline Status</label>
+            <div class="checkbox-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="isNeutered">
+                Neutered (Sterilized)
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="isVaccinated">
+                Vaccinated
+              </label>
+            </div>
+          </div>
+
+          <!-- Dynamic Species Field: Dog Breed Size -->
+          <div class="form-group" id="groupDogSize">
+            <label for="breedSize">Breed Size Category</label>
+            <select id="breedSize" class="form-control">
+              <option value="Small">Small Size</option>
+              <option value="Medium" selected>Medium Size</option>
+              <option value="Large">Large Size</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Species Field: Cat Feral status -->
+          <div class="form-group" id="groupCatFeral" style="display: none;">
+            <label>Taxonomy Flag</label>
+            <div class="checkbox-row" style="margin-top: 0.25rem;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="isFeral">
+                Feral (Wild Street Cat)
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="form-btn" id="submitBtn">Register Animal</button>
+          <button type="button" class="form-btn" id="cancelBtn" style="display: none; background: rgba(255,255,255,0.05); color: var(--text-main); margin-top: 0.5rem; border: 1px solid var(--border-color);" onclick="resetFormState()">Cancel Edit</button>
+        </form>
+      </div>
+
+      <!-- Registry Grid -->
+      <div>
+        <div class="registry-header">
+          <h2>Active Logs Registry</h2>
+          <button onclick="fetchRecords()" class="card-action-btn" style="color: var(--primary-hover); font-size: 0.9rem;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Sync Database
+          </button>
+        </div>
+        <div class="registry-grid" id="registryGrid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Console Log Wrapper -->
+    <div class="console-card">
+      <div class="console-header">
+        <div class="console-title">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          Subprocess Logistics Console
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Stdout output logs</div>
+      </div>
+      <div class="console-body" id="consoleBody">
+        <!-- Logs populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeSpecies = 'Dog';
+    let isEditing = false;
+
+    function setSpecies(species) {
+      if (isEditing) return; // Disallow toggle during edits
+      activeSpecies = species;
+      
+      document.getElementById('tabDog').classList.toggle('active', species === 'Dog');
+      document.getElementById('tabCat').classList.toggle('active', species === 'Cat');
+      
+      document.getElementById('groupDogSize').style.display = species === 'Dog' ? 'block' : 'none';
+      document.getElementById('groupCatFeral').style.display = species === 'Cat' ? 'block' : 'none';
+    }
+
+    // Fetch records and status on load
+    async function initDashboard() {
+      await fetchStatus();
+      await fetchRecords();
+      // Poll logs & status every 5 seconds
+      setInterval(fetchStatus, 3000);
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        
+        // Mode & Status Dot
+        const modeText = document.getElementById('engineModeText');
+        const dot = document.getElementById('engineDot');
+        
+        modeText.textContent = `Engine: ${data.mode}`;
+        
+        if (data.mode.includes('Simulation')) {
+          dot.className = 'status-dot simulated';
+        } else {
+          dot.className = 'status-dot';
+        }
+
+        // Output Console Logs
+        const consoleBody = document.getElementById('consoleBody');
+        consoleBody.innerHTML = '';
+        data.logs.forEach(log => {
+          const logLine = document.createElement('div');
+          logLine.textContent = log;
+          consoleBody.appendChild(logLine);
+        });
+      } catch (err) {
+        console.error('Failed to fetch engine status', err);
+      }
+    }
+
+    async function fetchRecords() {
+      try {
+        const res = await fetch('/api/records');
+        const records = await res.json();
+        
+        const grid = document.getElementById('registryGrid');
+        grid.innerHTML = '';
+
+        let total = records.length;
+        let cats = 0;
+        let ferals = 0;
+        let dogs = 0;
+        let neutered = 0;
+
+        if (total === 0) {
+          grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem;">No active animal records found. Register above!</div>`;
+        }
+
+        records.forEach(animal => {
+          if (animal.species === 'Dog') dogs++;
+          if (animal.species === 'Cat') {
+            cats++;
+            if (animal.extra === '1') ferals++;
+          }
+          if (animal.isNeutered) neutered++;
+
+          // Card Item
+          const card = document.createElement('div');
+          card.className = 'animal-card';
+          
+          const isDog = animal.species === 'Dog';
+          const specialFieldLabel = isDog ? 'Breed Size' : 'Taxonomy';
+          const specialFieldValue = isDog ? animal.extra : (animal.extra === '1' ? 'Feral' : 'Domestic');
+
+          card.innerHTML = `
+            <div>
+              <div class="animal-card-header">
+                <span class="animal-tag">${animal.tagNumber}</span>
+                <span class="species-badge ${animal.species.toLowerCase()}">${animal.species}</span>
+              </div>
+              <div class="animal-detail-row">
+                <span>Age</span>
+                <span class="animal-detail-value">${animal.age} months</span>
+              </div>
+              <div class="animal-detail-row">
+                <span>Health Status</span>
+                <span class="health-badge">${animal.healthStatus}</span>
+              </div>
+              <div class="animal-detail-row">
+                <span>${specialFieldLabel}</span>
+                <span class="animal-detail-value">${specialFieldValue}</span>
+              </div>
+              
+              <div class="status-badges-row">
+                <div class="status-flag ${animal.isNeutered ? 'active' : 'inactive'}" onclick="quickToggleStatus('${animal.tagNumber}', 'isNeutered', ${animal.isNeutered})">
+                  ${animal.isNeutered ? 'Neutered' : 'Intact'}
+                </div>
+                <div class="status-flag ${animal.isVaccinated ? 'active' : 'inactive'}" onclick="quickToggleStatus('${animal.tagNumber}', 'isVaccinated', ${animal.isVaccinated})">
+                  ${animal.isVaccinated ? 'Vaccinated' : 'Unvac'}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button class="card-action-btn" onclick="startEditAnimal(${JSON.stringify(animal).replace(/"/g, '&quot;')})">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Edit
+              </button>
+              <button class="card-action-btn delete" onclick="deleteAnimal('${animal.tagNumber}')">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Delete
+              </button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        // Set Dashboard Stats
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statCats').textContent = cats;
+        document.getElementById('statCatsFeral').textContent = `${ferals} Feral`;
+        document.getElementById('statDogs').textContent = dogs;
+        
+        const neuteredPct = total > 0 ? Math.round((neutered / total) * 100) : 0;
+        document.getElementById('statNeuteredPct').textContent = `${neuteredPct}%`;
+
+      } catch (err) {
+        console.error('Failed to fetch database records', err);
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const tag = document.getElementById('tagNumber').value;
+      const age = parseInt(document.getElementById('age').value, 10);
+      const health = document.getElementById('healthStatus').value;
+      const neutered = document.getElementById('isNeutered').checked;
+      const vaccinated = document.getElementById('isVaccinated').checked;
+      
+      let extra = '';
+      if (activeSpecies === 'Dog') {
+        extra = document.getElementById('breedSize').value;
+      } else {
+        extra = document.getElementById('isFeral').checked ? '1' : '0';
+      }
+
+      const payload = {
+        species: activeSpecies,
+        tagNumber: tag,
+        age,
+        healthStatus: health,
+        isNeutered: neutered,
+        isVaccinated: vaccinated,
+        extra
+      };
+
+      try {
+        if (isEditing) {
+          const originalTag = document.getElementById('editOriginalTag').value;
+          // PUT update
+          const res = await fetch(`/api/records/${originalTag}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error('Update failed');
+        } else {
+          // POST create
+          const res = await fetch('/api/records', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error('Registration failed');
+        }
+
+        resetFormState();
+        await fetchRecords();
+        await fetchStatus();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function quickToggleStatus(tag, key, currentVal) {
+      // Find full record data first
+      try {
+        const res = await fetch('/api/records');
+        const records = await res.json();
+        const record = records.find(r => r.tagNumber === tag);
+        
+        if (record) {
+          record[key] = !currentVal;
+          // Update
+          const putRes = await fetch(`/api/records/${tag}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              healthStatus: record.healthStatus,
+              isNeutered: record.isNeutered,
+              isVaccinated: record.isVaccinated
+            })
+          });
+          
+          if (putRes.ok) {
+            await fetchRecords();
+            await fetchStatus();
+          }
+        }
+      } catch (err) {
+        console.error('Quick toggle failed', err);
+      }
+    }
+
+    function startEditAnimal(animal) {
+      isEditing = true;
+      document.getElementById('formTitle').textContent = `Edit Record: ${animal.tagNumber}`;
+      document.getElementById('editOriginalTag').value = animal.tagNumber;
+      
+      document.getElementById('tagNumber').value = animal.tagNumber;
+      document.getElementById('tagNumber').disabled = true; // Cannot edit unique key
+      document.getElementById('age').value = animal.age;
+      document.getElementById('healthStatus').value = animal.healthStatus;
+      document.getElementById('isNeutered').checked = animal.isNeutered;
+      document.getElementById('isVaccinated').checked = animal.isVaccinated;
+      
+      activeSpecies = animal.species;
+      document.getElementById('tabDog').classList.toggle('active', animal.species === 'Dog');
+      document.getElementById('tabCat').classList.toggle('active', animal.species === 'Cat');
+      
+      // Selectively disable tabs during edits to prevent schema change
+      document.getElementById('tabDog').disabled = true;
+      document.getElementById('tabCat').disabled = true;
+
+      if (animal.species === 'Dog') {
+        document.getElementById('groupDogSize').style.display = 'block';
+        document.getElementById('groupCatFeral').style.display = 'none';
+        document.getElementById('breedSize').value = animal.extra;
+      } else {
+        document.getElementById('groupDogSize').style.display = 'none';
+        document.getElementById('groupCatFeral').style.display = 'block';
+        document.getElementById('isFeral').checked = animal.extra === '1';
+      }
+
+      document.getElementById('submitBtn').textContent = 'Save Changes';
+      document.getElementById('cancelBtn').style.display = 'block';
+    }
+
+    function resetFormState() {
+      isEditing = false;
+      document.getElementById('formTitle').textContent = 'Register Tag Record';
+      document.getElementById('editOriginalTag').value = '';
+      
+      document.getElementById('tagNumber').value = '';
+      document.getElementById('tagNumber').disabled = false;
+      document.getElementById('age').value = '';
+      document.getElementById('healthStatus').value = '';
+      document.getElementById('isNeutered').checked = false;
+      document.getElementById('isVaccinated').checked = false;
+      document.getElementById('isFeral').checked = false;
+      document.getElementById('breedSize').value = 'Medium';
+
+      document.getElementById('tabDog').disabled = false;
+      document.getElementById('tabCat').disabled = false;
+
+      setSpecies(activeSpecies);
+
+      document.getElementById('submitBtn').textContent = 'Register Animal';
+      document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    async function deleteAnimal(tag) {
+      if (!confirm(`Are you sure you want to delete record ${tag}?`)) return;
+      try {
+        const res = await fetch(`/api/records/${tag}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Deletion failed');
+        await fetchRecords();
+        await fetchStatus();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

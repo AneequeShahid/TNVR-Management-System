@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <algorithm>
 
 using namespace std;
 
@@ -38,6 +39,11 @@ public:
 
     // Encapsulation: Getters and Setters
     string getTagNumber() const { return tagNumber; }
+    int getAge() const { return age; }
+    string getHealthStatus() const { return healthStatus; }
+    bool getNeutered() const { return isNeutered; }
+    bool getVaccinated() const { return isVaccinated; }
+    
     void setHealthStatus(string health) { healthStatus = health; }
     void setNeutered(bool val) { isNeutered = val; }
     void setVaccinated(bool val) { isVaccinated = val; }
@@ -66,6 +72,8 @@ public:
     string serialize() const override {
         return Animal::serialize() + "," + breedSize;
     }
+    
+    string getBreedSize() const { return breedSize; }
 };
 
 class Cat : public Animal {
@@ -84,6 +92,8 @@ public:
     string serialize() const override {
         return Animal::serialize() + "," + (isFeral ? "1" : "0");
     }
+    
+    bool getFeral() const { return isFeral; }
 };
 
 // ==========================================
@@ -94,16 +104,50 @@ class TNVRManager {
     const string fileName = "tnvr_records.txt";
 
 public:
+    size_t getSize() const { return database.size(); }
+
     void addAnimal(unique_ptr<Animal> animal) {
+        // Remove existing animal if it shares the same tag number
+        database.erase(
+            remove_if(database.begin(), database.end(),
+                      [&animal](const unique_ptr<Animal>& existing) {
+                          return existing->getTagNumber() == animal->getTagNumber();
+                      }),
+            database.end()
+        );
         database.push_back(move(animal));
     }
 
-    void listAllRecords() const {
-        cout << "\n================ TNVR LOGISTICS REGISTRY ================\n";
-        for (const auto& animal : database) {
-            animal->printDetails();
-            cout << "---------------------------------------------------------\n";
+    bool deleteAnimal(const string& tag) {
+        auto beforeSize = database.size();
+        database.erase(
+            remove_if(database.begin(), database.end(),
+                      [&tag](const unique_ptr<Animal>& animal) {
+                          return animal->getTagNumber() == tag;
+                      }),
+            database.end()
+        );
+        return database.size() < beforeSize;
+    }
+
+    bool updateAnimal(const string& tag, const string& health, bool neutered, bool vaccinated) {
+        for (auto& animal : database) {
+            if (animal->getTagNumber() == tag) {
+                animal->setHealthStatus(health);
+                animal->setNeutered(neutered);
+                animal->setVaccinated(vaccinated);
+                return true;
+            }
         }
+        return false;
+    }
+
+    void listAllRecords() const {
+        cout << "[START_LIST]\n";
+        for (const auto& animal : database) {
+            cout << animal->serialize() << "\n";
+        }
+        cout << "[END_LIST]\n";
     }
 
     // Save database records to local text file
@@ -130,14 +174,17 @@ public:
         database.clear();
         string line;
         while (getline(inFile, line)) {
+            if (line.empty()) continue;
+            
             // Split CSV tokens
             vector<string> tokens;
             size_t pos = 0;
-            while ((pos = line.find(',')) != string::npos) {
-                tokens.push_back(line.substr(0, pos));
-                line.erase(0, pos + 1);
+            string temp = line;
+            while ((pos = temp.find(',')) != string::npos) {
+                tokens.push_back(temp.substr(0, pos));
+                temp.erase(0, pos + 1);
             }
-            tokens.push_back(line);
+            tokens.push_back(temp);
 
             if (tokens.size() >= 7) {
                 string species = tokens[0];
@@ -162,21 +209,88 @@ public:
 };
 
 // ==========================================
-// Console App Entry Point
+// Console App Entry Point (Command Loop)
 // ==========================================
 int main() {
     TNVRManager manager;
     manager.loadFromFile();
 
-    // Setup mock entries if database is empty
-    cout << "Initializing logistics matching...\n";
-    
-    // Add a Dog and a Cat
-    manager.addAnimal(make_unique<Dog>("DG-101", 24, "Healthy", true, true, "Medium"));
-    manager.addAnimal(make_unique<Cat>("CT-302", 12, "Injured-Recovering", false, true, true));
+    // Seed default database if completely empty on launch
+    if (manager.getSize() == 0) {
+        manager.addAnimal(make_unique<Dog>("DG-101", 24, "Healthy", true, true, "Medium"));
+        manager.addAnimal(make_unique<Cat>("CT-302", 12, "Injured", false, true, true));
+        manager.saveToFile();
+    }
 
-    manager.listAllRecords();
-    manager.saveToFile();
+    cout << "[READY] TNVR C++ Engine Active\n";
+
+    string command;
+    while (cin >> command) {
+        if (command == "LIST") {
+            manager.listAllRecords();
+        } 
+        else if (command == "ADD") {
+            string species, tag, health, extra;
+            int age;
+            int neuteredVal, vaccinatedVal;
+            
+            cin >> species >> tag >> age >> health >> neuteredVal >> vaccinatedVal >> extra;
+            
+            bool neutered = (neuteredVal == 1);
+            bool vaccinated = (vaccinatedVal == 1);
+
+            // Replace spaces encoded as underscores in health
+            replace(health.begin(), health.end(), '_', ' ');
+
+            if (species == "Dog") {
+                manager.addAnimal(make_unique<Dog>(tag, age, health, neutered, vaccinated, extra));
+                cout << "[SUCCESS] Dog added\n";
+            } else if (species == "Cat") {
+                bool feral = (extra == "1");
+                manager.addAnimal(make_unique<Cat>(tag, age, health, neutered, vaccinated, feral));
+                cout << "[SUCCESS] Cat added\n";
+            } else {
+                cout << "[ERROR] Invalid species\n";
+            }
+        } 
+        else if (command == "DELETE") {
+            string tag;
+            cin >> tag;
+            if (manager.deleteAnimal(tag)) {
+                cout << "[SUCCESS] Record deleted\n";
+            } else {
+                cout << "[ERROR] Tag not found\n";
+            }
+        } 
+        else if (command == "UPDATE") {
+            string tag, health;
+            int neuteredVal, vaccinatedVal;
+            
+            cin >> tag >> health >> neuteredVal >> vaccinatedVal;
+            
+            bool neutered = (neuteredVal == 1);
+            bool vaccinated = (vaccinatedVal == 1);
+            
+            replace(health.begin(), health.end(), '_', ' ');
+            
+            if (manager.updateAnimal(tag, health, neutered, vaccinated)) {
+                cout << "[SUCCESS] Record updated\n";
+            } else {
+                cout << "[ERROR] Tag not found\n";
+            }
+        } 
+        else if (command == "SAVE") {
+            manager.saveToFile();
+        } 
+        else if (command == "EXIT") {
+            manager.saveToFile();
+            cout << "[BYE] Exiting\n";
+            break;
+        } 
+        else {
+            cout << "[ERROR] Unknown command: " << command << "\n";
+        }
+    }
 
     return 0;
 }
